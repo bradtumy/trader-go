@@ -303,6 +303,34 @@ func readFile(cfg *Config) {
 	}
 }
 
+func GetUserProfile(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	userID := vars["id"]
+
+	// Replace with your database connection logic
+	db, err := sql.Open("mysql", "tradergo:password1@tcp(db:3306)/trader_go")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer db.Close()
+
+	var username string
+	err = db.QueryRow("SELECT username FROM users WHERE id = ?", userID).Scan(&username)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			http.Error(w, "User not found", http.StatusNotFound)
+		} else {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+		return
+	}
+
+	userProfile := map[string]string{"id": userID, "username": username}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(userProfile)
+}
+
 func handleRequests(cfg Config) {
 
 	router := mux.NewRouter()
@@ -310,6 +338,7 @@ func handleRequests(cfg Config) {
 	router.HandleFunc("/", homePage)
 	router.HandleFunc("/users", returnAllUsers).Methods("GET")
 	router.HandleFunc("/users", createUser).Methods("POST")
+	router.HandleFunc("/users/{id}", GetUserProfile).Methods("GET")
 	router.HandleFunc("/orders", returnAllOrders).Methods("GET")
 	router.HandleFunc("/orders", createOrder).Methods("POST")
 	router.HandleFunc("/stocks", returnAllStocks).Methods("GET")
