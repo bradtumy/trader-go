@@ -2,3 +2,4 @@ main
 app.trader-go.io.key
 resources/properties.yml
 app.trader-go.io.crt
+trader-go
