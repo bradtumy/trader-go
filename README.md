@@ -1,6 +1,6 @@
 # Trader-Go
 
-Trader-Go is a web application that interacts with a MySQL database to manage stock trading data. This README provides instructions for setting up and running the project, including building Docker containers and initializing the database.
+Trader-Go is a web application that interacts with a MySQL database to manage stock trading data. This README provides instructions for setting up and running the project, including building Docker containers, initializing the database, and configuring SSL/TLS.
 
 ## Table of Contents
 
@@ -9,9 +9,10 @@ Trader-Go is a web application that interacts with a MySQL database to manage st
 3. [Setup](#setup)
 4. [Running the Application](#running-the-application)
 5. [Database Initialization](#database-initialization)
-6. [Usage](#usage)
-7. [Troubleshooting](#troubleshooting)
-8. [License](#license)
+6. [SSL/TLS Configuration](#ssltls-configuration)
+7. [Usage](#usage)
+8. [Troubleshooting](#troubleshooting)
+9. [License](#license)
 
 ## Project Overview
 
@@ -25,6 +26,7 @@ Before you begin, ensure you have the following installed:
 - Docker Compose
 - Go (for local development)
 - MySQL (for local development or using Docker)
+- OpenSSL (for generating SSL certificates)
 
 ## Setup
 
@@ -74,6 +76,8 @@ Before you begin, ensure you have the following installed:
          - "10000:10000"
        depends_on:
          - db
+       volumes:
+         - ./resources:/app/resources
 
    volumes:
      db-data:
@@ -158,6 +162,40 @@ INSERT IGNORE INTO orders (user_id, stock_id, shares) VALUES
 (2, 7, 500);
 ```
 
+## SSL/TLS Configuration
+
+To enable SSL/TLS for secure connections, you need to generate and configure SSL certificates.
+
+### Generating SSL Certificates
+
+1. **Generate the Private Key and Certificate**
+
+   Navigate to the `resources` directory:
+
+   ```bash
+   cd resources
+   ```
+
+   Use OpenSSL to generate the private key and certificate:
+
+   ```bash
+   openssl req -newkey rsa:2048 -nodes -keyout app.trader-go.io.key -x509 -days 365 -out app.trader-go.io.crt
+   ```
+
+   - `-newkey rsa:2048`: Generates a new RSA key of 2048 bits.
+   - `-nodes`: Skips the option to secure the key with a passphrase.
+   - `-keyout`: Specifies the file to save the private key.
+   - `-x509`: Specifies that a self-signed certificate is created.
+   - `-days 365`: Sets the validity period of the certificate to 365 days.
+   - `-out`: Specifies the file to save the certificate.
+
+2. **Configure the Application to Use SSL**
+
+   Ensure that your Go application is configured to use the generated SSL files. Update your Go application's configuration to reference:
+
+   - `resources/app.trader-go.io.crt` (Certificate file)
+   - `resources/app.trader-go.io.key` (Key file)
+
 ## Troubleshooting
 
 - **Database Connection Issues**: Ensure that the MySQL container is up and running. Check the `docker-compose logs db` for any errors.
@@ -166,6 +204,8 @@ INSERT IGNORE INTO orders (user_id, stock_id, shares) VALUES
 
 - **Permission Errors**: Verify that the `root` user in MySQL has the necessary permissions to create users and grant privileges.
 
+- **SSL/TLS Errors**: Ensure that the SSL certificate files are correctly placed in the `resources` directory and properly referenced in your application configuration.
+
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the Apache-2.0 License - see the [LICENSE](LICENSE) file for details.
