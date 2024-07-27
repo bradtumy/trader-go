@@ -303,6 +303,38 @@ func readFile(cfg *Config) {
 	}
 }
 
+func getOrderHistory(w http.ResponseWriter, r *http.Request) {
+	// Authenticate user and get user_id from session or request
+	userID := 1 // Placeholder; replace with actual user authentication and retrieval
+
+	rows, err := db.Query("SELECT id, stock_id, shares FROM orders WHERE user_id = ?", userID)
+	if err != nil {
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		return
+	}
+	defer rows.Close()
+
+	var orders []map[string]interface{}
+	for rows.Next() {
+		var id, stockID, shares int
+		if err := rows.Scan(&id, &stockID, &shares); err != nil {
+			http.Error(w, "Internal server error", http.StatusInternalServerError)
+			return
+		}
+		order := map[string]interface{}{
+			"id":       id,
+			"stock_id": stockID,
+			"shares":   shares,
+		}
+		orders = append(orders, order)
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(orders); err != nil {
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
+	}
+}
+
 func handleRequests(cfg Config) {
 
 	router := mux.NewRouter()
@@ -312,6 +344,7 @@ func handleRequests(cfg Config) {
 	router.HandleFunc("/users", createUser).Methods("POST")
 	router.HandleFunc("/orders", returnAllOrders).Methods("GET")
 	router.HandleFunc("/orders", createOrder).Methods("POST")
+	router.HandleFunc("/order-history", getOrderHistory).Methods("GET")
 	router.HandleFunc("/stocks", returnAllStocks).Methods("GET")
 	router.HandleFunc("/stocks", createStock).Methods("POST")
 	router.HandleFunc("/accounts", returnAllAccounts).Methods("GET")
