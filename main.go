@@ -407,6 +407,40 @@ func searchStocks(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(stocks)
 }
 
+func getKeyMetrics(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	// Example metrics: total number of users, total number of stocks, total number of orders
+	var metrics struct {
+		TotalUsers  int `json:"total_users"`
+		TotalStocks int `json:"total_stocks"`
+		TotalOrders int `json:"total_orders"`
+	}
+
+	// Get total number of users
+	err := db.QueryRow("SELECT COUNT(*) FROM users").Scan(&metrics.TotalUsers)
+	if err != nil {
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	// Get total number of stocks
+	err = db.QueryRow("SELECT COUNT(*) FROM stocks").Scan(&metrics.TotalStocks)
+	if err != nil {
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	// Get total number of orders
+	err = db.QueryRow("SELECT COUNT(*) FROM orders").Scan(&metrics.TotalOrders)
+	if err != nil {
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	json.NewEncoder(w).Encode(metrics)
+}
+
 func handleRequests(cfg Config) {
 
 	router := mux.NewRouter()
@@ -425,6 +459,7 @@ func handleRequests(cfg Config) {
 	router.HandleFunc("/accounts/{i}", returnUsersAccounts).Methods("GET")
 	router.HandleFunc("/trade", returnAllTrades)
 	router.HandleFunc("/transfer", returnAllTransfers)
+	router.HandleFunc("/key-metrics", getKeyMetrics).Methods("GET")
 
 	// start the https listener using the signed cert and key
 	log.Fatal(http.ListenAndServeTLS(cfg.Server.Port, cfg.Server.Certificate, cfg.Server.Key, router))
