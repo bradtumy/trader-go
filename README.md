@@ -1,3 +1,7 @@
+Sure, here is an updated version of the README with some sample curl commands for the available APIs:
+
+---
+
 # Trader-Go
 
 Trader-Go is a web application that interacts with a MySQL database to manage stock trading data. This README provides instructions for setting up and running the project, including building Docker containers, initializing the database, and configuring SSL/TLS.
@@ -13,6 +17,7 @@ Trader-Go is a web application that interacts with a MySQL database to manage st
 7. [Usage](#usage)
 8. [Troubleshooting](#troubleshooting)
 9. [License](#license)
+10. [Sample API Usage](#sample-api-usage)
 
 ## Project Overview
 
@@ -91,7 +96,7 @@ Before you begin, ensure you have the following installed:
 
 ## Running the Application
 
-Once the containers are up and running, you can access the Trader-Go application at `http://localhost:10000`. The application will interact with the MySQL database to handle data related to users, stocks, and orders.
+Once the containers are up and running, you can access the Trader-Go application at `https://localhost:10000`. The application will interact with the MySQL database to handle data related to users, stocks, and orders.
 
 ## Database Initialization
 
@@ -196,16 +201,59 @@ To enable SSL/TLS for secure connections, you need to generate and configure SSL
    - `resources/app.trader-go.io.crt` (Certificate file)
    - `resources/app.trader-go.io.key` (Key file)
 
+## Sample API Usage
+
+### Create a User
+
+```bash
+curl -X POST -H "Content-Type: application/json" -d '{"username": "newuser"}' https://localhost:10000/users
+```
+
+### Get All Users
+
+```bash
+curl -X GET https://localhost:10000/users
+```
+
+### Create a Stock
+
+```bash
+curl -X POST -H "Content-Type: application/json" -d '{"symbol": "GOOGL", "name": "Alphabet Inc", "price": 2750.00, "total_shares": 1000000}' https://localhost:10000/stocks
+```
+
+### Get All Stocks
+
+```bash
+curl -X GET https://localhost:10000/stocks
+```
+
+### Search Stocks by Symbol or Name
+
+```bash
+curl -X GET "https://localhost:10000/search/stocks?query=AAPL"
+```
+
+### Create an Order
+
+```bash
+curl -X POST -H "Content-Type: application/json" -d '{"userid": 1, "stockid": 1, "shares": 10}' https://localhost:10000/orders
+```
+
+### Get All Orders
+
+```bash
+curl -X GET https://localhost:10000/orders
+```
+
 ## Troubleshooting
 
 - **Database Connection Issues**: Ensure that the MySQL container is up and running. Check the `docker-compose logs db` for any errors.
-
 - **Table Not Found**: If tables are missing, ensure that the `init.sql` script was executed correctly. You can manually execute it within the MySQL container if needed.
-
 - **Permission Errors**: Verify that the `root` user in MySQL has the necessary permissions to create users and grant privileges.
-
 - **SSL/TLS Errors**: Ensure that the SSL certificate files are correctly placed in the `resources` directory and properly referenced in your application configuration.
 
 ## License
 
 This project is licensed under the Apache-2.0 License - see the [LICENSE](LICENSE) file for details.
+
+---
