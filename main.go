@@ -363,6 +363,50 @@ func GetUserProfile(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(userProfile)
 }
 
+func searchStocks(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	queryParams := r.URL.Query()
+	symbol := queryParams.Get("symbol")
+	name := queryParams.Get("name")
+
+	var stocks []Stock
+	var rows *sql.Rows
+	var err error
+
+	if symbol != "" && name != "" {
+		rows, err = db.Query("SELECT * FROM stocks WHERE symbol LIKE ? OR name LIKE ?", "%"+symbol+"%", "%"+name+"%")
+	} else if symbol != "" {
+		rows, err = db.Query("SELECT * FROM stocks WHERE symbol LIKE ?", "%"+symbol+"%")
+	} else if name != "" {
+		rows, err = db.Query("SELECT * FROM stocks WHERE name LIKE ?", "%"+name+"%")
+	} else {
+		http.Error(w, "Please provide either a symbol or name query parameter", http.StatusBadRequest)
+		return
+	}
+
+	if err != nil {
+		panic(err.Error())
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var stock Stock
+		err := rows.Scan(&stock.ID, &stock.Symbol, &stock.Name, &stock.Price, &stock.TotalShares)
+		if err != nil {
+			panic(err.Error())
+		}
+		stocks = append(stocks, stock)
+	}
+
+	if err := rows.Err(); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	json.NewEncoder(w).Encode(stocks)
+}
+
 func handleRequests(cfg Config) {
 
 	router := mux.NewRouter()
@@ -376,6 +420,7 @@ func handleRequests(cfg Config) {
 	router.HandleFunc("/order-history", getOrderHistory).Methods("GET")
 	router.HandleFunc("/stocks", returnAllStocks).Methods("GET")
 	router.HandleFunc("/stocks", createStock).Methods("POST")
+	router.HandleFunc("/stocks/search", searchStocks).Methods("GET")
 	router.HandleFunc("/accounts", returnAllAccounts).Methods("GET")
 	router.HandleFunc("/accounts/{i}", returnUsersAccounts).Methods("GET")
 	router.HandleFunc("/trade", returnAllTrades)
